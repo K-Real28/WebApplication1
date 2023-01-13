@@ -7,34 +7,37 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1;
 using WebApplication1.Domain;
+using WebApplication1.Interfaces;
+using WebApplication1.Services;
 
 namespace WebApplication1.Controllers
 {
     public class CoursesController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly ICourseService _courseService;
 
-        public CoursesController(AppDbContext context)
+        public CoursesController(AppDbContext context, ICourseService courseService)
         {
             _context = context;
+            _courseService = courseService;
         }
 
         // GET: Courses
         public async Task<IActionResult> Index()
         {
-              return View(await _context.Courses.ToListAsync());
+              return View(await _courseService.GetCourses());
         }
 
         // GET: Courses/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.Courses == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var course = await _context.Courses
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var course = _courseService.GetById(id); ;
             if (course == null)
             {
                 return NotFound();
@@ -54,12 +57,11 @@ namespace WebApplication1.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name")] Course course)
+        public async Task<IActionResult> Create(Course course)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(course);
-                await _context.SaveChangesAsync();
+                await _courseService.Create(course);
                 return RedirectToAction(nameof(Index));
             }
             return View(course);
@@ -73,7 +75,7 @@ namespace WebApplication1.Controllers
                 return NotFound();
             }
 
-            var course = await _context.Courses.FindAsync(id);
+            var course = _courseService.GetById(id);
             if (course == null)
             {
                 return NotFound();
@@ -86,7 +88,7 @@ namespace WebApplication1.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name")] Course course)
+        public async Task<IActionResult> Edit(int id, Course course)
         {
             if (id != course.Id)
             {
@@ -97,8 +99,7 @@ namespace WebApplication1.Controllers
             {
                 try
                 {
-                    _context.Update(course);
-                    await _context.SaveChangesAsync();
+                    _courseService.Update(course);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -119,13 +120,12 @@ namespace WebApplication1.Controllers
         // GET: Courses/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Courses == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var course = await _context.Courses
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var course = _courseService.GetById(id);
             if (course == null)
             {
                 return NotFound();
@@ -139,23 +139,13 @@ namespace WebApplication1.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Courses == null)
-            {
-                return Problem("Entity set 'AppDbContext.Courses'  is null.");
-            }
-            var course = await _context.Courses.FindAsync(id);
-            if (course != null)
-            {
-                _context.Courses.Remove(course);
-            }
-            
-            await _context.SaveChangesAsync();
+            _courseService.Delete(id);
             return RedirectToAction(nameof(Index));
         }
 
         private bool CourseExists(int id)
         {
-          return _context.Courses.Any(e => e.Id == id);
+          return _courseService.CourseExists(id);
         }
     }
 }

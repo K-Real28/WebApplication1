@@ -7,34 +7,36 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1;
 using WebApplication1.Domain;
+using WebApplication1.Interfaces;
 
 namespace WebApplication1.Controllers
 {
     public class InstructorsController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IInstructorService _instructorService;
 
-        public InstructorsController(AppDbContext context)
+        public InstructorsController(IInstructorService instructorService, AppDbContext context)
         {
+            _instructorService = instructorService;
             _context = context;
         }
 
         // GET: Instructors
         public async Task<IActionResult> Index()
         {
-              return View(await _context.Instructors.ToListAsync());
+              return View(await _instructorService.GetInstructors());
         }
 
         // GET: Instructors/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.Instructors == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var instructor = await _context.Instructors
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var instructor = _instructorService.GetById(id);
             if (instructor == null)
             {
                 return NotFound();
@@ -54,12 +56,11 @@ namespace WebApplication1.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,FullName,Phone")] Instructor instructor)
+        public async Task<IActionResult> Create( Instructor instructor)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(instructor);
-                await _context.SaveChangesAsync();
+                await _instructorService.Create(instructor);
                 return RedirectToAction(nameof(Index));
             }
             return View(instructor);
@@ -68,12 +69,12 @@ namespace WebApplication1.Controllers
         // GET: Instructors/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.Instructors == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var instructor = await _context.Instructors.FindAsync(id);
+            var instructor = _instructorService.GetById(id);
             if (instructor == null)
             {
                 return NotFound();
@@ -86,7 +87,7 @@ namespace WebApplication1.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,Phone")] Instructor instructor)
+        public async Task<IActionResult> Edit(int id, Instructor instructor)
         {
             if (id != instructor.Id)
             {
@@ -97,8 +98,7 @@ namespace WebApplication1.Controllers
             {
                 try
                 {
-                    _context.Update(instructor);
-                    await _context.SaveChangesAsync();
+                    _instructorService.Update(instructor);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -119,13 +119,12 @@ namespace WebApplication1.Controllers
         // GET: Instructors/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Instructors == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var instructor = await _context.Instructors
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var instructor = _instructorService.GetById(id);
             if (instructor == null)
             {
                 return NotFound();
@@ -139,23 +138,13 @@ namespace WebApplication1.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Instructors == null)
-            {
-                return Problem("Entity set 'AppDbContext.Instructors'  is null.");
-            }
-            var instructor = await _context.Instructors.FindAsync(id);
-            if (instructor != null)
-            {
-                _context.Instructors.Remove(instructor);
-            }
-            
-            await _context.SaveChangesAsync();
+            _instructorService.Delete(id);
             return RedirectToAction(nameof(Index));
         }
 
         private bool InstructorExists(int id)
         {
-          return _context.Instructors.Any(e => e.Id == id);
+          return _instructorService.InstructorExists(id);
         }
     }
 }
