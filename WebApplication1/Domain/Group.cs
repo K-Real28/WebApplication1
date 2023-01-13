@@ -1,11 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using WebApplication1.Domain.BaseModels;
 
 namespace WebApplication1.Domain
 {
-    public class Group
+    public class Group : NamedBaseEnity
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
         public int Year { get; set; }
 
         public int? CourseId { get; set; }
